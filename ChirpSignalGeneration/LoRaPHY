@@ -1,0 +1,50 @@
+clear; close; clc;
+
+SpreadingFactor               = 7; % It can take values 7 - 12
+BandWidth                     = 1000; % Bandwidth
+SamplingFrequency             = 1000; % Sampling Frequency
+SymbolToBeTransmitted         = 50;   % Send symbol '10'
+SNR                           = -10;  % Signal to Noise Ratio
+
+% Generate a data symbol
+SampleNumber                  = (2^SpreadingFactor)*SamplingFrequency/BandWidth;
+Bin                           = SymbolToBeTransmitted; % Add SymbolToBeTransmitted to Bin to start (defines the data symbol)
+LoraSymbol                    = zeros(1, SampleNumber);
+
+for Index = 1:SampleNumber
+	if Bin >= (2^SpreadingFactor)
+		Bin                   = Bin - 2^SpreadingFactor;
+	end
+	Bin = Bin + 1;
+	LoraSymbol(Index)         = (1/(sqrt(2^SpreadingFactor)))*exp(1i*2*pi*(Bin)*(Bin/(2^SpreadingFactor*2)));
+end
+
+for j = 1:100
+	% Add noise
+	LoraSymbolNoisy           = awgn(LoraSymbol, SNR, 'measured');
+	
+	% Transmit
+	% Receiver below
+	
+	% Generate the Base Down Chirp
+	BasisDownChirp            = zeros(1, SampleNumber);
+	Bin                       = 0;
+	for Index = 1:SampleNumber
+		if Bin >= (2^SpreadingFactor)
+			Bin               = Bin - 2^SpreadingFactor;
+		end
+		Bin                   = Bin + 1;
+		BasisDownChirp(Index) = (1/(sqrt(2^SpreadingFactor)))*exp(-1i*2*pi*(Bin)*(Bin/(2^SpreadingFactor*2)));
+	end
+	
+	Dechirped                 = LoraSymbolNoisy .* BasisDownChirp;
+	CorrelationResult         = (abs(fft(Dechirped)).^2);
+	plot(CorrelationResult);
+	[~, ind]                  = max(CorrelationResult);
+	ind2(j)                   = ind;
+	
+	pause(0.01);
+end
+%histogram(ind2,2^SpreadingFactor);
+SymbolErrorRate = sum(ind2 ~= 5 + 1) / j;
+
