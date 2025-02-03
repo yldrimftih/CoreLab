@@ -1,12 +1,10 @@
 clc; clear; close all;
 
-%% Parameters
+% Parameters
 ModulationOrder     = 4;       % QPSK modulation
 NumberOfSymbols     = 1024;    % Total number of symbols
 NumberOfSubCarriers = 64;      % Number of OFDM subcarriers
 SNRdB               = 10;      % Signal-to-Noise Ratio (in dB)
-
-%% Transmitter
 
 % Generate Random QPSK Data
 GeneratedDatas   = randi([0 ModulationOrder-1], NumberOfSymbols, 1);
@@ -14,34 +12,32 @@ GeneratedDatas   = randi([0 ModulationOrder-1], NumberOfSymbols, 1);
 % QPSK Modulation
 GeneratedSymbols = pskmod(GeneratedDatas, ModulationOrder, pi/ModulationOrder);
 
-% Reshape Data for OFDM Transmission (Each Column is an OFDM Symbol)
+% Reshape Data for OFDM Transmission 
 NumberOfOFDMSymbols = NumberOfSymbols / NumberOfSubCarriers;
 SubCarrierSymbols   = reshape(GeneratedSymbols, NumberOfSubCarriers, NumberOfOFDMSymbols);
 
-% IFFT to Convert to Time Domain (Per OFDM Symbol)
+% IFFT to Convert to Time Domain
 TimeDomainSymbols = ifft(SubCarrierSymbols);
 
 % Serialize for Transmission
 TransmittedSignal = TimeDomainSymbols(:);
 
-%% AWGN Channel (Manually Adding Gaussian Noise)
+% AWGN Channel 
 
 % Compute Signal Power
 SignalPower = mean(abs(TransmittedSignal).^2);
 
 % Convert SNR from dB to Linear Scale
-SNR_Linear = 10^(SNRdB/10);
+SNRLinear = 10^(SNRdB/10);
 
 % Compute Noise Power
-NoisePower = SignalPower / SNR_Linear;
+NoisePower = SignalPower / SNRLinear;
 
 % Generate Complex Gaussian Noise
 Noise = sqrt(NoisePower/2) * (randn(size(TransmittedSignal)) + 1j * randn(size(TransmittedSignal)));
 
 % Add Noise to the Transmitted Signal
 ReceivedSignal = TransmittedSignal + Noise;
-
-%% Receiver
 
 % Reshape Back into OFDM Symbols
 ReceivedSymbolsMatrix = reshape(ReceivedSignal, NumberOfSubCarriers, NumberOfOFDMSymbols);
@@ -52,12 +48,10 @@ RecoveredSubCarrierSymbols = fft(ReceivedSymbolsMatrix);
 % QPSK Demodulation
 DemodulatedSymbols = pskdemod(RecoveredSubCarrierSymbols(:), ModulationOrder, pi/ModulationOrder);
 
-%% BER Calculation
+% BER Calculation
 BitErrors = sum(GeneratedDatas ~= DemodulatedSymbols);
 BER = BitErrors / length(GeneratedDatas);
 disp(['Bit Error Rate (BER): ', num2str(BER)]);
-
-%% Visualization
 
 % Scatter Plot: Received Symbols After AWGN
 figure;
