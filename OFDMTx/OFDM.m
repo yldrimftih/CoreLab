@@ -1,37 +1,82 @@
 clc; clear; close all;
 
-% Parameters
+%% Parameters
 ModulationOrder     = 4;       % QPSK modulation
-Variance            = 0.01;    % Variance. Since the Signal has unit energy, the variance must be selected between 0:0.01:1
-NumberOfSymbols     = 1024;    % Number of symbols
-NumberOfSubCarriers = 64;
+NumberOfSymbols     = 1024;    % Total number of symbols
+NumberOfSubCarriers = 64;      % Number of OFDM subcarriers
+SNRdB               = 10;      % Signal-to-Noise Ratio (in dB)
 
-% Generating Random Data Symbols
+%% Transmitter
+
+% Generate Random QPSK Data
 GeneratedDatas   = randi([0 ModulationOrder-1], NumberOfSymbols, 1);
 
-% PSK Modulation
-GeneratedSymbols = pskmod(GeneratedDatas', ModulationOrder, pi/ModulationOrder);
+% QPSK Modulation
+GeneratedSymbols = pskmod(GeneratedDatas, ModulationOrder, pi/ModulationOrder);
 
+% Reshape Data for OFDM Transmission (Each Column is an OFDM Symbol)
 NumberOfOFDMSymbols = NumberOfSymbols / NumberOfSubCarriers;
-SubCarrierSymbols = reshape(GeneratedSymbols,NumberOfSubCarriers, NumberOfOFDMSymbols);
+SubCarrierSymbols   = reshape(GeneratedSymbols, NumberOfSubCarriers, NumberOfOFDMSymbols);
+
+% IFFT to Convert to Time Domain (Per OFDM Symbol)
 TimeDomainSymbols = ifft(SubCarrierSymbols);
 
-TransmittedOFDMSymbols = TimeDomainSymbols(:);
+% Serialize for Transmission
+TransmittedSignal = TimeDomainSymbols(:);
 
-plot(real(TransmittedOFDMSymbols));
-hold on;
-plot(imag(TransmittedOFDMSymbols));
+%% AWGN Channel (Manually Adding Gaussian Noise)
 
-% Generate complex AWGN noise 
-NoiseReal        = sqrt(Variance / 2) * randn(NumberOfSymbols, 1); % Real part
-NoiseImaginary   = sqrt(Variance / 2) * randn(NumberOfSymbols, 1); % Imaginary part
-AWGNNoise        = NoiseReal + 1j * NoiseImaginary; % Complex noise
+% Compute Signal Power
+SignalPower = mean(abs(TransmittedSignal).^2);
 
-% Add noise to the signal
-%ReceivedSymbols  = GeneratedSymbols + AWGNNoise;
+% Convert SNR from dB to Linear Scale
+SNR_Linear = 10^(SNRdB/10);
 
-%SNRdB            = mean(abs(GeneratedSymbols).^2) / mean(abs(AWGNNoise).^2);
+% Compute Noise Power
+NoisePower = SignalPower / SNR_Linear;
 
-%scatterplot(ReceivedSymbols)
+% Generate Complex Gaussian Noise
+Noise = sqrt(NoisePower/2) * (randn(size(TransmittedSignal)) + 1j * randn(size(TransmittedSignal)));
 
+% Add Noise to the Transmitted Signal
+ReceivedSignal = TransmittedSignal + Noise;
 
+%% Receiver
+
+% Reshape Back into OFDM Symbols
+ReceivedSymbolsMatrix = reshape(ReceivedSignal, NumberOfSubCarriers, NumberOfOFDMSymbols);
+
+% FFT to Convert Back to Frequency Domain
+RecoveredSubCarrierSymbols = fft(ReceivedSymbolsMatrix);
+
+% QPSK Demodulation
+DemodulatedSymbols = pskdemod(RecoveredSubCarrierSymbols(:), ModulationOrder, pi/ModulationOrder);
+
+%% BER Calculation
+BitErrors = sum(GeneratedDatas ~= DemodulatedSymbols);
+BER = BitErrors / length(GeneratedDatas);
+disp(['Bit Error Rate (BER): ', num2str(BER)]);
+
+%% Visualization
+
+% Scatter Plot: Received Symbols After AWGN
+figure;
+scatterplot(RecoveredSubCarrierSymbols(:));
+title(['Received QPSK Constellation After OFDM Transmission (SNR = ', num2str(SNRdB), ' dB)']);
+grid on;
+
+% Time-Domain Signal Visualization
+figure;
+subplot(2,1,1);
+plot(real(TransmittedSignal));
+title('Transmitted OFDM Signal (Time Domain)');
+xlabel('Sample Index');
+ylabel('Amplitude');
+grid on;
+
+subplot(2,1,2);
+plot(real(ReceivedSignal));
+title('Received OFDM Signal After AWGN (Time Domain)');
+xlabel('Sample Index');
+ylabel('Amplitude');
+grid on;
