@@ -3,17 +3,17 @@ clear; close; clc;
 %% Set OFDM Frame Parameters
 %The pilot subcarrier spacing and channel bandwidth parameters are fixed at 30 KHz and 3 MHz.
 % The chosen set of OFDM parameters:
-OFDMParams.FFTLength              = 128;   % FFT length
-OFDMParams.CPLength               = 32;    % Cyclic prefix length
-OFDMParams.NumSubcarriers         = 72;    % Number of sub-carriers in the band
-OFDMParams.Subcarrierspacing      = 30e3;  % Sub-carrier spacing of 30 KHz
-OFDMParams.PilotSubcarrierSpacing = 9;     % Pilot sub-carrier spacing
-OFDMParams.channelBW              = 3e6;   % Bandwidth of the channel 3 MHz
+OFDMParams.FFTLength              = 128;   % FFT length.
+OFDMParams.CPLength               = 32;    % Cyclic prefix length.
+OFDMParams.NumSubcarriers         = 72;    % Number of sub-carriers in the band.
+OFDMParams.Subcarrierspacing      = 30e3;  % Sub-carrier spacing of 30 KHz.
+OFDMParams.PilotSubcarrierSpacing = 9;     % Pilot sub-carrier spacing.
+OFDMParams.channelBW              = 3e6;   % Bandwidth of the channel 3 MHz.
 
-dataParams.modOrder       = 4;  		   % Data modulation order
-dataParams.coderate       = "1/2";         % Code rate
-dataParams.numSymPerFrame = 30;			   % Number of data symbols per frame 20 for setup
-dataParams.numFrames      = 10000;         % Number of frames to transmit
+dataParams.modOrder       = 4;  		   % Data modulation order. Supported Modulation Orders: QPSK, 16QAM, 64QAM, 256QAM, 1024QAM.
+dataParams.coderate       = "1/2";         % Code rate.             Supported rates: 1/2, 2/3.
+dataParams.numSymPerFrame = 30;			   % Number of data symbols per frame 20 for setup.
+dataParams.numFrames      = 10000;         % Number of frames to transmit.
 
 %% Initialize Transmitter Parameters
 radioDevice            = "PLUTO";
