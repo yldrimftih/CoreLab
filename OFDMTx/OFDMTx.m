@@ -15,10 +15,10 @@ numSymPerFrame    = sysParam.numSymPerFrame; % Number of OFDM symbols per frame
 [modType,bitsPerModSym,puncVec,~] = getParameters(txParamConfig.modOrder,txParamConfig.codeRateIndex);
 
 %% Synchronization signal generation
-syncSignal                  = helperOFDMSyncSignal();
+syncSignal                  = OFDMSyncSignal();
 
 %% Reference signal generation
-refSignal                   = helperOFDMRefSignal(numSubCar);
+refSignal                   = OFDMRefSignal(numSubCar);
 
 %% Header generation
 % Generate header bits
@@ -94,7 +94,7 @@ headerSym                   = pskmod(headerIntrlvOut,2,InputType="bit");
 %% Pilot generation
 % Number of data/pilots OFDM symbols per frame
 numDataOFDMSymbols = numSymPerFrame - numCommonChannels;
-pilot              = helperOFDMPilotSignal(sysParam.pilotsPerSym);    % Pilot signal values
+pilot              = OFDMPilotSignal(sysParam.pilotsPerSym);          % Pilot signal values
 pilot              = repmat(pilot,1,numDataOFDMSymbols);              % Pilot symbols per frame
 
 %% Data generation
