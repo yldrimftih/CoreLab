@@ -1,56 +1,4 @@
-function [txWaveform,grid,diagnostics] = helperOFDMTx(txParamConfig,sysParam,txObj)
-%helperOFDMTx Generates OFDM transmitter waveform
-%   Generates OFDM transmitter waveform with synchronization, reference,
-%   header, pilots, and data signals. This function returns txWaveform,
-%   txGrid, and diagnostics using transmitter parameters txParamConfig.
-%
-%   [txWaveform,grid,diagnostics] = helperOFDMTx(txParamConfig,sysParam,txObj)
-%   txParamConfig - Specify as structure or array of structure with the
-%   following attributes as shown below:
-%   modOrder      - Specify 2, 4, 16, 64, 256, or 1024 
-%   codeRateIndex - Specify 0, 1, 2, and 3 for the rates '1/2', '2/3',
-%                   '3/4', and '5/6' respectively. 
-%   txDataBits    - Specify binary values in a row or column vector of
-%                   length trBlkSize. Default is column vector containing
-%                   randomly generated binary values of length trBlkSize.
-%
-%   Calculate transport block size (trBlkSize) as follows:
-%   numSubCar - Number of data subcarriers per symbol
-%   pilotsPerSym - Number of pilots per symbol
-%   numDataOFDMSymbols - Number of data OFDM symbols per frame
-%   bitsPerModSym - Number of bits per modulated symbol
-%   codeRate - Punctured code rate
-%   dataConvK - Constraint length of the convolutional encoder
-%   dataCRCLen - CRC length
-%   trBlkSize = ((numSubCar - pilotsPerSym) * 
-%              numDataOFDMSymbols * bitsPerModSym * codeRate) - 
-%              (dataConvK-1) - dataCRCLen
-%
-%   txWaveform  - Transmitter waveform, returned as a column vector of length
-%               ((fftLen+cpLen)*numSymPerFrame), where
-%               fftLen - FFT length
-%               cpLen - Cyclic prefix length
-%               numSymPerFrame - Number of OFDM symbols per frame
-%
-%   grid        - Grid, returned as a matrix of dimension
-%               numSubCar-by-numSymPerFrame
-%
-%   diagnostics - Diagnostics,returned as a structure or array of structure
-%   based on txParamConfig. Diagnostics has the following attributes:
-%   headerBits - Header bits as column vector of size 22 includes:
-%                Number of bits to represent FFT length index       =  3
-%                Number of bits to represent symbol modulation type =  2
-%                Number of bits to represent code rate index        =  2
-%                Number of spare bits                               = 15
-%   dataBits   - Actual data bits transmitted
-%                dataBits is a binary row or column vector of length
-%                trbBlkSize. Row or column vector
-%                depends on the dimension of txParamConfig.dataBits.
-%                Default size is a column vector of length trbBlkSize.
-%   ofdmModOut - OFDM modulated output as a column vector of length
-%                (fftLen+cpLen)*numSymPerFrame.
-
-% Copyright 2023 The MathWorks, Inc.
+function txWaveform = helperOFDMTx(txParamConfig,sysParam,txObj)
 
 ssIdx             = sysParam.ssIdx;          % sync symbol index
 rsIdx             = sysParam.rsIdx;          % reference symbol index
@@ -63,25 +11,14 @@ cpLen             = sysParam.CPLen;          % CP length
 numSubCar         = sysParam.usedSubCarr;    % Number of subcarriers per OFDM symbol
 numSymPerFrame    = sysParam.numSymPerFrame; % Number of OFDM symbols per frame
 
-% Initialize transmitter grid
-grid              = zeros(numSubCar,numSymPerFrame);
-
 % Derive actual parameters from inputs
 [modType,bitsPerModSym,puncVec,~] = getParameters(txParamConfig.modOrder,txParamConfig.codeRateIndex);
 
 %% Synchronization signal generation
 syncSignal                  = helperOFDMSyncSignal();
-syncSignalInd               = (numSubCar/2) - 31 + (1:62);
-
-% Load synchronization signal on the grid
-grid(syncSignalInd,ssIdx)   = syncSignal;
 
 %% Reference signal generation
 refSignal                   = helperOFDMRefSignal(numSubCar);
-refSignalInd                = 1:length(refSignal);
-
-% Load reference signals on the grid
-grid(refSignalInd,rsIdx(1)) = refSignal;
 
 %% Header generation
 % Generate header bits
@@ -138,7 +75,6 @@ reserveBits                 = zeros(1,14-nbitsFFTLenIndex-nbitsCodeRateIndex-nbi
 
 % Form header bits
 headerBits                  = [FFTLenIndexBits, modTypeIndexBits, codeRateIndexBits, reserveBits];
-diagnostics.headerBits      = headerBits.';
 
 % Append CRC bits
 headerCRCOut                = reshape(crcGenerate(headerBits',txObj.crcHeaderGen),1,[]);
@@ -154,18 +90,12 @@ headerIntrlvOut             = reshape(reshape(headerConvOut,headerIntrlvLen,[]).
 
 % Modulate header using BPSK
 headerSym                   = pskmod(headerIntrlvOut,2,InputType="bit");
-headerSymInd                = (numSubCar/2)-36+(1:72);
-
-% Load header signal on the grid
-grid(headerSymInd,headerIdx) = headerSym;
 
 %% Pilot generation
 % Number of data/pilots OFDM symbols per frame
 numDataOFDMSymbols = numSymPerFrame - numCommonChannels;
 pilot              = helperOFDMPilotSignal(sysParam.pilotsPerSym);    % Pilot signal values
 pilot              = repmat(pilot,1,numDataOFDMSymbols);              % Pilot symbols per frame
-pilotGap           = sysParam.pilotSpacing;                           % Pilot signal repetition gap in OFDM symbol
-pilotInd           = (1:pilotGap:numSubCar).';
 
 %% Data generation
 % Initialize convolutional encoder parameters
@@ -187,7 +117,6 @@ else
         end
     end
 end
-diagnostics.dataBits         = txParamConfig.txDataBits(1:trBlkSize);
 
 % Retrieve data to form a transport block
 dataBits = txParamConfig.txDataBits;
@@ -216,15 +145,6 @@ for i = 1:numDataOFDMSymbols
     modData(:,i) = qammod(intrlvOut,txParamConfig.modOrder,...
         UnitAveragePower=true,InputType="bit");
 end
-modDataInd = 1:numSubCar;
-
-% Remove the pilot indices from modData indices
-modDataInd(pilotInd) = [];
-
-% Load data and pilots on the grid
-grid(pilotInd,(headerIdx+1:numSymPerFrame)) = pilot;
-grid(modDataInd,(headerIdx+1:numSymPerFrame)) = modData;
-
    
 %% OFDM modulation
 dcIdx                  = (fftLen/2)+1;
@@ -249,9 +169,6 @@ ofdmModOut             = [ofdmSyncOut; ofdmRefOut; ofdmHeaderOut; ofdmDataOut];
 
 % Filter OFDM modulator output
 txWaveform             = txObj.txFilter(ofdmModOut);
-
-% Collect diagnostic information
-diagnostics.ofdmModOut = txWaveform.';
 
 end
 
