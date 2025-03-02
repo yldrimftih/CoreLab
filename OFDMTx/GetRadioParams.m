@@ -1,4 +1,4 @@
-function ofdmRadioParams = helperGetRadioParams(sysParams,radioDevice,sampleRate,centerFrequency,gain) 
+function ofdmRadioParams = GetRadioParams(sysParams,radioDevice,sampleRate,centerFrequency,gain) 
 
 ofdmRadioParams.RadioDevice     = radioDevice;
 ofdmRadioParams.CenterFrequency = centerFrequency;

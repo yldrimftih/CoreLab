@@ -1,4 +1,4 @@
-function radio = helperGetRadioTxObj(ofdmTx)
+function radio = GetRadioTxObj(ofdmTx)
 
 radio                    = sdrtx('Pluto');
 radio.BasebandSampleRate = ofdmTx.SampleRate;

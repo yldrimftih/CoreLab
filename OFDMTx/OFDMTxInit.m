@@ -1,4 +1,4 @@
-function txObj = helperOFDMTxInit(sysParam)
+function txObj = OFDMTxInit(sysParam)
 
 % Create a tx filter object for baseband filtering
 txFilterCoef       = helperOFDMFrontEndFilter(sysParam);

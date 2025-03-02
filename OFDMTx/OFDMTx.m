@@ -1,4 +1,4 @@
-function txWaveform = helperOFDMTx(txParamConfig,sysParam,txObj)
+function txWaveform = OFDMTx(txParamConfig,sysParam,txObj)
 
 ssIdx             = sysParam.ssIdx;          % sync symbol index
 rsIdx             = sysParam.rsIdx;          % reference symbol index
