@@ -142,8 +142,7 @@ for i = 1:numDataOFDMSymbols
     intrlvOut = OFDMInterleave(dataEnc(:,i),sysParam.dataIntrlvNColumns);
 
     % Modulate the symbol
-    modData(:,i) = qammod(intrlvOut,txParamConfig.modOrder,...
-        UnitAveragePower=true,InputType="bit");
+    modData(:,i) = qammod(intrlvOut,txParamConfig.modOrder, UnitAveragePower=true,InputType="bit");
 end
    
 %% OFDM modulation
