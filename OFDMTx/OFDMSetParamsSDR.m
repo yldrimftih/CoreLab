@@ -48,12 +48,6 @@ sysParam.ssIdx                = 1;                                       % Symbo
 sysParam.rsIdx                = 2;                                       % Symbol 2 is the reference symbol
 sysParam.headerIdx            = 3;                                       % Symbol 3 is the header symbol
 
-% Simulation options
-sysParam.enableCFO            = true;
-sysParam.enableCPE            = true;
-sysParam.enableScopes         = dataParam.enableScopes;
-sysParam.verbosity            = dataParam.verbosity;
-
 % Derived parameters from simulation settings
 % The remaining parameters are derived from user selections. Checks are
 % made to ensure that interdependent parameters are compatible with each
