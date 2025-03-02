@@ -1,7 +1,7 @@
 function txObj = OFDMTxInit(sysParam)
 
 % Create a tx filter object for baseband filtering
-txFilterCoef       = helperOFDMFrontEndFilter(sysParam);
+txFilterCoef       = OFDMFrontEndFilter(sysParam);
 txObj.txFilter     = dsp.FIRFilter('Numerator',txFilterCoef);
 
 % Configure PN sequencer for additive scrambler
