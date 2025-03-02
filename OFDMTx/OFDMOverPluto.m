@@ -25,7 +25,7 @@ sampleRate               = sysParam.scs*sysParam.FFTLen;                        
 ofdmTx                   = helperGetRadioParams(sysParam,radioDevice,sampleRate,centerFrequency,gain); % modify the helper function. 
 
 % Get the radio transmitter and spectrum analyzer system object system object for the user to visualize the transmitted waveform.
-[radio,spectrumAnalyze] = helperGetRadioTxObj(ofdmTx); % remove spectrumAnalyze. 
+radio                    = helperGetRadioTxObj(ofdmTx); 
 
 % Initialize transmitter
 txObj = helperOFDMTxInit(sysParam); % you can use the function to apply pulse shaping
@@ -35,7 +35,7 @@ tunderrun = 0;                      % Initialize count for underruns
 % respect to the calculated trBlkSize
 % Store data bits for BER calculations
 txParam.txDataBits = trBlk;                                          % here, give your own bit stream. type of trBlk is double but it only has 0s and 1s.
-[txOut,txGrid,txDiagnostics] = helperOFDMTx(txParam,sysParam,txObj); % remove txgrid and txDiagnostics
+txOut              = helperOFDMTx(txParam,sysParam,txObj); % remove txgrid and txDiagnostics
 
 % Repeat the data in a buffer for PLUTO radio to make sure there are less
 % underruns. The receiver decodes only one frame from where the first
